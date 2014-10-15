@@ -30,7 +30,7 @@ void clockprescale(void)
 void InitSPI(void)
 {	//Set SCK (PB2), MISO of AVR (PB1) as output
 	//THIS HAS TO BE SET BEFORE SPI-ENABLE BELOW
-	DDRB |= (1<<PB1) | (1<<PB2);
+	DDRB |= (1<<PB1) | (1<<PB2) | (1<<PB3); //added PB3 as output because we're adding CE back in - no 3 pin setup
 
 	// Set MOSI (PB0) as input
 	DDRB &= ~(1<<PB0);
@@ -66,9 +66,8 @@ uint8_t WriteByteSPI(uint8_t cData)
 //Here is where you set up your input/output ports for the ATtiny.
 void ioinit(void)
 {
-	DDRB |= (1<<PB3)|(1<<PB4); //led AFTER DO THE 3 PIN SETUP
-	PORTB &=~(1<<PB3);//initalize port low
-	PORTB &=~(1<<PB4);
+	DDRB |= (1<<PB4); //led AFTER DO THE 4 PIN SETUP
+	PORTB &=~(1<<PB4);//initalize port low
 }
 ////////////////////////////////////////////////////
 
@@ -77,14 +76,16 @@ void ioinit(void)
 uint8_t GetReg(uint8_t reg)
 {
 	_delay_us(10);
-	CLEARBIT(PORTB, 2);	//CSN low - nRF starts to listen for a command (this is with the 5 pin setup
-	_delay_ms(10);
+	CLEARBIT(PORTB, 2);	//CSN low - nRF starts to listen for a command (this is with the 5 pin setup)
+//WHAT WE NEED TO DO IS SET THIS TO CLEAR AND WRITE TO PB2, WHICH IS THE SCLK PIN
+//SO WE GET A REGISTER WHEN CSN IS HIGH????? SO ITS ALWAYS GOING TO BE HIGH?
+	_delay_ms(10);//increased delay to account for multiplexing [i think this can be microseconds]
 	WriteByteSPI(R_REGISTER + reg);	//R_Register = set the nRF to reading mode, reg = this registry will be read back
 	_delay_us(10);
 	reg = WriteByteSPI(NOP);	//Send NOP (dummy byte) once to receive back the first byte in the "reg" register
 	_delay_us(10);
-	SETBIT(PORTB, 2);	//CSN High - nRF goes back to doing nothing
-	_delay_ms(64);
+	SETBIT(PORTB, 2);	//set SCLK to high 
+	_delay_ms(64); //increased delay to account for multiplexing [i think this can be microseconds]
 	return reg;	// Return the read registry
 }
 
