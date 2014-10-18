@@ -103,9 +103,9 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
 
 	_delay_us(10);		//make sure last command has finished
 	CLEARBIT(PORTB, 2);	//CSN low = nrf starts to listen for a command
-	_delay_us(10);
+	_delay_ms(10);
 	WriteByteSPI(reg);	//set the nRF to Write or Read mode of "reg"
-	_delay_us(10);
+	_delay_ms(10);
 
 	int i;
 	for(i=0; i<antVal; i++)
@@ -122,7 +122,7 @@ uint8_t *WriteToNrf(uint8_t ReadWrite, uint8_t reg, uint8_t *val, uint8_t antVal
 		}
 	}
 	SETBIT(PORTB, 2);	//CSN High = nrf goes back to sleep
-
+	_delay_ms(5);
 	return ret;	//return the array
 }
 
@@ -180,7 +180,7 @@ void nrf24L01_init(void)
 	WriteToNrf(W, RX_PW_P0, val, 1);
 
 	//CONFIG reg setup - now its time to boot up the nRF and choose tx or rx
-	val[0]=0x1E;  //0b0000 1110 CONFIG registry
+	val[0]=0x1F;  //0b0001 1111 CONFIG registry <--- CHANGED TO RECEIVER 10/17/14
 	//bit "1":1=power up,  bit "0":0=transmitter (bit "0":1=Reciver) (bit "4":1=mask_Max_RT) 
 	WriteToNrf(W, CONFIG, val, 1);
 
@@ -217,12 +217,13 @@ void reset(void)
 {
 	_delay_us(10);
 	CLEARBIT(PORTB, 2);	//CSN low
-	_delay_us(10);
+	_delay_ms(10);
 	WriteByteSPI(W_REGISTER + STATUS);	//write to STATUS registry
 	_delay_us(10);
 	WriteByteSPI(0x70);	//reset all IRQ in STATUS registry
 	_delay_us(10);
 	SETBIT(PORTB, 2);	//CSN IR_High
+	_delay_ms(5);
 }
 
 
